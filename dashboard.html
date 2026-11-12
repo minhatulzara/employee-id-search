@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Management Dashboard</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f6fb;color:#243047}
+header{background:#173b70;color:white;padding:18px 5%;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h2{margin:0;font-size:21px}
+button{border:0;border-radius:7px;padding:10px 15px;cursor:pointer;font-weight:bold}
+.logout{background:#fff;color:#173b70}
+.container{max-width:1100px;margin:25px auto;padding:0 15px}
+.card{background:white;padding:22px;border-radius:12px;margin-bottom:22px;box-shadow:0 3px 15px #0000000b}
+h3{margin-top:0;color:#173b70}
+.stats{background:#e9f1ff;padding:18px;border-radius:10px;margin-bottom:22px}
+.stats strong{font-size:27px;color:#1758b8}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}
+label{display:block;font-size:14px;font-weight:bold;margin-bottom:7px}
+input{width:100%;padding:12px;border:1px solid #d5dce8;border-radius:7px;font-size:15px}
+.primary{background:#1764c0;color:white;margin-top:16px}
+.primary:disabled{opacity:.6}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:700px}
+th,td{text-align:left;padding:12px;border-bottom:1px solid #e8edf4;font-size:14px}
+th{background:#f2f6fc}
+.edit{background:#e6efff;color:#1457a8;margin-right:5px}
+.delete{background:#ffe8e8;color:#bd2525}
+#message{margin-top:12px;font-size:14px}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}header h2{font-size:17px}}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>Employee Management</h2>
+  <button class="logout" id="logoutBtn">Logout</button>
+</header>
+
+<div class="container">
+
+  <div class="stats">
+    <div>মোট কর্মচারী</div>
+    <strong id="totalEmployees">লোড হচ্ছে...</strong>
+  </div>
+
+  <section class="card">
+    <h3>নতুন কর্মচারী যোগ করুন</h3>
+
+    <form id="employeeForm">
+      <div class="form-grid">
+
+        <div>
+          <label>Employee ID</label>
+          <input id="empId" required placeholder="কর্মচারীর ID">
+        </div>
+
+        <div>
+          <label>Line</label>
+          <input id="line" placeholder="Line">
+        </div>
+
+        <div>
+          <label>Post</label>
+          <input id="post" placeholder="Post">
+        </div>
+
+        <div>
+          <label>Name</label>
+          <input id="name" required placeholder="কর্মচারীর নাম">
+        </div>
+
+        <div>
+          <label>Phone Number</label>
+          <input id="phone" type="tel" placeholder="ফোন নম্বর">
+        </div>
+
+      </div>
+
+      <button class="primary" id="saveBtn" type="submit">
+        Add Employee
+      </button>
+
+      <p id="message"></p>
+    </form>
+  </section>
+
+  <section class="card">
+    <h3>সকল কর্মচারীর তালিকা</h3>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Line</th>
+            <th>Post</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="employeeList">
+          <tr><td colspan="6">তথ্য লোড হচ্ছে...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase.js";
+
+import {
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+import {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const form = document.getElementById("employeeForm");
+const list = document.getElementById("employeeList");
+const message = document.getElementById("message");
+const total = document.getElementById("totalEmployees");
+const saveBtn = document.getElementById("saveBtn");
+
+let currentUser = null;
+let ready = false;
+
+function showMessage(text, color = "green") {
+  message.style.color = color;
+  message.textContent = text;
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = "./admin.html";
+    return;
+  }
+
+  try {
+    const adminDoc = await getDoc(doc(db, "admins", user.uid));
+
+    if (!adminDoc.exists() ||
+        !["superadmin", "admin"].includes(adminDoc.data().role)) {
+      await signOut(auth);
+      window.location.href = "./admin.html";
+      return;
+    }
+
+    currentUser = user;
+    ready = true;
+    await loadEmployees();
+
+  } catch (error) {
+    console.error(error);
+    list.innerHTML =
+      '<tr><td colspan="6">অনুমতি যাচাই করা যায়নি। আবার চেষ্টা করো।</td></tr>';
+  }
+});
+
+async function loadEmployees() {
+  const snapshot = await getDocs(collection(db, "employees"));
+
+  total.textContent = snapshot.size;
+  list.innerHTML = "";
+
+  if (snapshot.empty) {
+    list.innerHTML =
+      '<tr><td colspan="6">এখনো কোনো কর্মচারী যোগ করা হয়নি।</td></tr>';
+    return;
+  }
+
+  snapshot.forEach((item) => {
+    const emp = item.data();
+    const tr = document.createElement("tr");
+
+    const values = [
+      emp.id, emp.line, emp.post, emp.name, emp.phone
+    ];
+
+    values.forEach((value) => {
+      const td = document.createElement("td");
+      td.textContent = value || "";
+      tr.appendChild(td);
+    });
+
+    const action = document.createElement("td");
+
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "Edit";
+    editBtn.className = "edit";
+    editBtn.onclick = () => editEmployee(item.id, emp);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "Delete";
+    deleteBtn.className = "delete";
+    deleteBtn.onclick = () => removeEmployee(item.id);
+
+    action.append(editBtn, deleteBtn);
+    tr.appendChild(action);
+    list.appendChild(tr);
+  });
+}
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  if (!ready || !currentUser) return;
+
+  const employee = {
+    id: document.getElementById("empId").value.trim(),
+    line: document.getElementById("line").value.trim(),
+    post: document.getElementById("post").value.trim(),
+    name: document.getElementById("name").value.trim(),
+    phone: document.getElementById("phone").value.trim()
+  };
+
+  if (!employee.id || !employee.name) {
+    showMessage("ID এবং Name অবশ্যই দিতে হবে।", "red");
+    return;
+  }
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Saving...";
+
+  try {
+    await addDoc(collection(db, "employees"), employee);
+    form.reset();
+    showMessage("কর্মচারী সফলভাবে যোগ হয়েছে।");
+    await loadEmployees();
+
+  } catch (error) {
+    console.error(error);
+    showMessage("তথ্য যোগ করা যায়নি। আবার চেষ্টা করো।", "red");
+
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Add Employee";
+  }
+});
+
+async function editEmployee(documentId, emp) {
+  if (!ready) return;
+
+  const id = prompt("Employee ID:", emp.id || "");
+  if (id === null) return;
+
+  const name = prompt("Name:", emp.name || "");
+  if (name === null) return;
+
+  const line = prompt("Line:", emp.line || "");
+  if (line === null) return;
+
+  const post = prompt("Post:", emp.post || "");
+  if (post === null) return;
+
+  const phone = prompt("Phone:", emp.phone || "");
+  if (phone === null) return;
+
+  if (!id.trim() || !name.trim()) {
+    alert("ID এবং Name খালি রাখা যাবে না।");
+    return;
+  }
+
+  try {
+    await updateDoc(doc(db, "employees", documentId), {
+      id: id.trim(),
+      name: name.trim(),
+      line: line.trim(),
+      post: post.trim(),
+      phone: phone.trim()
+    });
+
+    alert("কর্মচারীর তথ্য পরিবর্তন হয়েছে।");
+    await loadEmployees();
+
+  } catch (error) {
+    console.error(error);
+    alert("তথ্য পরিবর্তন করা যায়নি।");
+  }
+}
+
+async function removeEmployee(documentId) {
+  if (!ready) return;
+
+  if (!confirm("তুমি কি এই কর্মচারীর তথ্য বাতিল করতে চাও?")) {
+    return;
+  }
+
+  try {
+    await deleteDoc(doc(db, "employees", documentId));
+    alert("কর্মচারীর তথ্য বাতিল হয়েছে।");
+    await loadEmployees();
+
+  } catch (error) {
+    console.error(error);
+    alert("তথ্য বাতিল করা যায়নি।");
+  }
+}
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await signOut(auth);
+  window.location.href = "./admin.html";
+});
+</script>
+
+</body>
+</html>
