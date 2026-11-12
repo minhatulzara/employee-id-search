@@ -1,122 +1,258 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Employee ID Search</title>
-  <style>
-    *{box-sizing:border-box}
-    body{font-family:Arial,sans-serif;background:#eef2f7;margin:0;padding:24px 14px;color:#1f2937}
-    .container{max-width:520px;margin:35px auto;background:#fff;padding:26px;border-radius:14px;box-shadow:0 5px 24px rgba(0,0,0,.08)}
-    h2{margin:0 0 8px;text-align:center;color:#173b67}
-    .sub{text-align:center;color:#64748b;font-size:14px;margin:0 0 24px}
-    label{display:block;font-weight:700;margin-bottom:8px}
-    input{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;outline:none}
-    input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
-    button{width:100%;padding:13px;margin-top:13px;border:0;border-radius:8px;background:#1769aa;color:white;font-size:16px;font-weight:700;cursor:pointer}
-    button:disabled{opacity:.65;cursor:wait}
-    #message{margin-top:18px;text-align:center;color:#475569}
-    .result{margin-top:18px;border:1px solid #dbeafe;border-radius:10px;overflow:hidden}
-    .result h3{margin:0;padding:13px;background:#eff6ff;color:#174477;font-size:17px}
-    .row{display:flex;gap:12px;padding:11px 13px;border-top:1px solid #e5e7eb}
-    .key{width:105px;flex-shrink:0;color:#64748b;font-weight:700}
-    .value{overflow-wrap:anywhere}
-    .notfound{color:#b91c1c}
-    .footer{text-align:center;color:#94a3b8;font-size:12px;margin-top:22px}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Worker Search System</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  font-family:Arial,sans-serif;
+  background:#eef2f7;
+  margin:0;
+  padding:25px 14px;
+  color:#1f2937;
+}
+.container{
+  max-width:560px;
+  margin:35px auto;
+  background:white;
+  padding:25px;
+  border-radius:14px;
+  box-shadow:0 5px 24px rgba(0,0,0,.08);
+}
+h2{text-align:center;color:#173b67}
+.sub{text-align:center;color:#64748b}
+label{display:block;font-weight:bold;margin:18px 0 8px}
+input{
+  width:100%;
+  padding:13px;
+  border:1px solid #cbd5e1;
+  border-radius:8px;
+  font-size:16px;
+}
+button,.call-button{
+  display:block;
+  width:100%;
+  padding:13px;
+  margin-top:15px;
+  border:0;
+  border-radius:8px;
+  background:#1769aa;
+  color:white;
+  font-size:16px;
+  font-weight:bold;
+  text-align:center;
+  text-decoration:none;
+  cursor:pointer;
+}
+.call-button{background:#16834a}
+button:disabled{opacity:.6}
+#message{text-align:center;margin-top:18px}
+.result{
+  margin-top:18px;
+  border:1px solid #dbeafe;
+  border-radius:10px;
+  overflow:hidden;
+}
+.result h3{
+  margin:0;
+  padding:13px;
+  background:#eff6ff;
+  color:#174477;
+}
+.row{
+  display:flex;
+  gap:12px;
+  padding:11px 13px;
+  border-top:1px solid #e5e7eb;
+}
+.key{
+  width:115px;
+  flex-shrink:0;
+  color:#64748b;
+  font-weight:bold;
+}
+.value{overflow-wrap:anywhere}
+.footer{
+  text-align:center;
+  color:#94a3b8;
+  font-size:12px;
+  margin-top:22px;
+}
+</style>
 </head>
+
 <body>
-  <main class="container">
-    <h2>Worker ID Search</h2>
-    <p class="sub">আপনার Employee ID লিখে তথ্য খুঁজুন</p>
+<div class="container">
 
-    <form id="searchForm">
-      <label for="employeeId">Employee ID</label>
-      <input id="employeeId" type="text" placeholder="আপনার Employee ID লিখুন" autocomplete="off" required>
-      <button id="searchButton" type="submit">Search করুন</button>
-    </form>
+<h2>Worker Search</h2>
+<p class="sub">Employee ID অথবা নাম দিয়ে কর্মীর তথ্য খুঁজুন</p>
 
-    <div id="message" aria-live="polite"></div>
-    <div id="result"></div>
-    <div class="footer">Employee Information Search System</div>
-  </main>
+<form id="searchForm">
+  <label>Employee ID / Worker Name</label>
+  <input
+    id="searchText"
+    type="text"
+    placeholder="আইডি অথবা কর্মীর নাম লিখুন"
+    required
+  >
+  <button id="searchButton" type="submit">Search করুন</button>
+</form>
 
-  <script type="module">
-    import { db } from "./firebase.js";
-    import {
-      collection, query, where, getDocs, limit
-    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+<div id="message"></div>
+<div id="result"></div>
 
-    const form = document.getElementById("searchForm");
-    const input = document.getElementById("employeeId");
-    const button = document.getElementById("searchButton");
-    const message = document.getElementById("message");
-    const result = document.getElementById("result");
+<div class="footer">Employee Information Search System</div>
 
-    function addRow(label, value) {
-      const row = document.createElement("div");
-      row.className = "row";
-      const key = document.createElement("div");
-      key.className = "key";
-      key.textContent = label;
-      const val = document.createElement("div");
-      val.className = "value";
-      val.textContent = value || "তথ্য নেই";
-      row.append(key, val);
-      return row;
+</div>
+
+<script type="module">
+
+import { db } from "./firebase.js";
+
+import {
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const form = document.getElementById("searchForm");
+const input = document.getElementById("searchText");
+const button = document.getElementById("searchButton");
+const message = document.getElementById("message");
+const result = document.getElementById("result");
+
+function addRow(label,value){
+
+  const row = document.createElement("div");
+  row.className = "row";
+
+  const key = document.createElement("div");
+  key.className = "key";
+  key.textContent = label;
+
+  const val = document.createElement("div");
+  val.className = "value";
+  val.textContent = value || "তথ্য নেই";
+
+  row.append(key,val);
+
+  return row;
+}
+
+function makeCard(employee){
+
+  const card = document.createElement("section");
+  card.className = "result";
+
+  const heading = document.createElement("h3");
+  heading.textContent = "Worker Information";
+
+  card.append(heading);
+
+  card.append(
+    addRow("Employee ID",employee.id),
+    addRow("Name",employee.name),
+    addRow("Mobile Number",employee.phone),
+    addRow("Line",employee.line),
+    addRow("Post",employee.post ?? employee.Post)
+  );
+
+  if(employee.phone){
+
+    const callButton = document.createElement("a");
+
+    callButton.className = "call-button";
+    callButton.textContent = "📞 Call Now";
+
+    callButton.href =
+      "tel:" + String(employee.phone).replace(/[^\d+]/g,"");
+
+    card.append(callButton);
+  }
+
+  return card;
+}
+
+form.addEventListener("submit",async function(event){
+
+  event.preventDefault();
+
+  const searchText = input.value.trim();
+
+  result.replaceChildren();
+  message.textContent = "";
+
+  if(!searchText){
+    message.textContent = "Employee ID অথবা নাম লিখুন।";
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "খোঁজা হচ্ছে...";
+
+  try{
+
+    const snapshot = await getDocs(
+      collection(db,"employees")
+    );
+
+    const term = searchText.toLocaleLowerCase();
+
+    const matches = snapshot.docs
+      .map(doc => doc.data())
+      .filter(employee => {
+
+        const id = String(employee.id ?? "").trim();
+        const name = String(employee.name ?? "").toLocaleLowerCase();
+
+        return id === searchText || name.includes(term);
+
+      });
+
+    if(matches.length === 0){
+
+      message.textContent =
+        "এই ID অথবা নামে কোনো কর্মী পাওয়া যায়নি।";
+
+      message.style.color = "red";
+
+      return;
     }
 
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const employeeId = input.value.trim();
-      result.replaceChildren();
-      message.className = "";
-      if (!employeeId) {
-        message.textContent = "অনুগ্রহ করে Employee ID লিখুন।";
-        return;
-      }
-
-      button.disabled = true;
-      button.textContent = "খোঁজা হচ্ছে...";
-      message.textContent = "";
-
-      try {
-        const q = query(
-          collection(db, "employees"),
-          where("id", "==", employeeId),
-          limit(1)
-        );
-        const snapshot = await getDocs(q);
-
-        if (snapshot.empty) {
-          message.className = "notfound";
-          message.textContent = "এই Employee ID-এর কোনো তথ্য পাওয়া যায়নি।";
-          return;
-        }
-
-        const employee = snapshot.docs[0].data();
-        const card = document.createElement("section");
-        card.className = "result";
-        const heading = document.createElement("h3");
-        heading.textContent = "Worker Information";
-        card.append(heading);
-        card.append(
-          addRow("Employee ID", employee.id),
-          addRow("Name", employee.name),
-          addRow("Line", employee.line),
-          addRow("Post", employee.post ?? employee.Post)
-        );
-        result.append(card);
-        message.textContent = "তথ্য পাওয়া গেছে।";
-      } catch (error) {
-        console.error(error);
-        message.className = "notfound";
-        message.textContent = "তথ্য খুঁজতে সমস্যা হয়েছে। Firebase Rules ও সংযোগ পরীক্ষা করুন।";
-      } finally {
-        button.disabled = false;
-        button.textContent = "Search করুন";
-      }
+    matches.slice(0,30).forEach(employee => {
+      result.append(makeCard(employee));
     });
-  </script>
+
+    message.style.color = "green";
+
+    message.textContent =
+      "মোট " + matches.length + " জন কর্মী পাওয়া গেছে।";
+
+    if(matches.length > 30){
+      message.textContent += " প্রথম ৩০ জন দেখানো হচ্ছে।";
+    }
+
+  }catch(error){
+
+    console.error(error);
+
+    message.style.color = "red";
+
+    message.textContent =
+      "তথ্য খুঁজতে সমস্যা হয়েছে। Firebase Rules পরীক্ষা করুন।";
+
+  }finally{
+
+    button.disabled = false;
+    button.textContent = "Search করুন";
+
+  }
+
+});
+
+</script>
+
 </body>
 </html>
