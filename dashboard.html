@@ -15,7 +15,11 @@ body{
   color:#243047;
 }
 
+/* STICKY HEADER */
 header{
+  position:sticky;
+  top:0;
+  z-index:1000;
   background:#173b70;
   color:white;
   padding:18px 5%;
@@ -24,7 +28,7 @@ header{
   align-items:center;
   gap:12px;
   flex-wrap:wrap;
-  box-shadow:0 3px 12px #00000015;
+  box-shadow:0 3px 12px #00000020;
 }
 
 header h2{
@@ -42,6 +46,11 @@ button{
 }
 
 button:hover{opacity:.88}
+
+button:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
 
 .logout{
   background:white;
@@ -152,11 +161,37 @@ input:focus,select:focus{
   display:none;
 }
 
+/* FILTER TOGGLE BUTTON */
+.filter-heading{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:15px;
+}
+
+.filter-heading h3{
+  margin:0;
+}
+
+.filter-toggle{
+  background:#eaf2ff;
+  color:#1758b8;
+  border:1px solid #d3e3fb;
+  padding:10px 15px;
+}
+
+/* FILTER AREA */
 .filter-grid{
   display:grid;
   grid-template-columns:1.5fr 1fr 1fr;
   gap:13px;
   margin-bottom:20px;
+}
+
+.filter-grid.is-hidden{
+  display:none;
 }
 
 .filter-grid input,
@@ -220,14 +255,67 @@ tbody tr:hover{
   gap:10px;
 }
 
+/* MOBILE DESIGN */
 @media(max-width:650px){
-  header h2{font-size:17px}
-  .form-grid{grid-template-columns:1fr}
-  .filter-grid{grid-template-columns:1fr}
-  .card{padding:17px}
-  .top-stats{align-items:stretch}
-  .stats-info{width:100%}
-  .add-btn{width:100%}
+
+  header{
+    padding:13px 15px;
+  }
+
+  header h2{
+    font-size:16px;
+  }
+
+  .logout{
+    padding:9px 12px;
+    font-size:13px;
+  }
+
+  .container{
+    margin:16px auto;
+    padding:0 10px;
+  }
+
+  .form-grid{
+    grid-template-columns:1fr;
+  }
+
+  .filter-grid{
+    grid-template-columns:1fr;
+  }
+
+  .filter-grid.is-hidden{
+    display:none;
+  }
+
+  .card{
+    padding:15px;
+    border-radius:10px;
+  }
+
+  .top-stats{
+    align-items:stretch;
+  }
+
+  .stats-info{
+    width:100%;
+  }
+
+  .add-btn{
+    width:100%;
+  }
+
+  .filter-heading{
+    align-items:stretch;
+  }
+
+  .filter-toggle{
+    width:100%;
+  }
+
+  th,td{
+    padding:11px 9px;
+  }
 }
 </style>
 </head>
@@ -256,7 +344,6 @@ tbody tr:hover{
 
     </div>
   </section>
-
 
   <!-- ADD EMPLOYEE FORM -->
   <section class="card" id="employeeFormSection">
@@ -325,6 +412,7 @@ tbody tr:hover{
       </div>
 
       <div class="form-actions">
+
         <button class="primary" id="saveBtn" type="submit">
           Save Employee
         </button>
@@ -332,6 +420,7 @@ tbody tr:hover{
         <button class="cancel-btn" type="button" id="cancelFormBtn">
           Cancel
         </button>
+
       </div>
 
       <p id="message"></p>
@@ -339,14 +428,24 @@ tbody tr:hover{
     </form>
   </section>
 
-
   <!-- EMPLOYEE LIST -->
   <section class="card">
 
-    <h3>সকল কর্মচারীর তালিকা</h3>
+    <div class="filter-heading">
+      <h3>সকল কর্মচারীর তালিকা</h3>
+
+      <button
+        type="button"
+        class="filter-toggle"
+        id="filterToggleBtn"
+        aria-expanded="true"
+      >
+        ☰ ফিল্টার লুকান
+      </button>
+    </div>
 
     <!-- FILTER -->
-    <div class="filter-grid">
+    <div class="filter-grid" id="filterArea">
 
       <div>
         <label>নাম দিয়ে খুঁজুন</label>
@@ -422,7 +521,6 @@ tbody tr:hover{
 
 </div>
 
-
 <script type="module">
 
 import { auth, db } from "./firebase.js";
@@ -455,10 +553,44 @@ const filterLine = document.getElementById("filterLine");
 const filterPost = document.getElementById("filterPost");
 const listCount = document.getElementById("listCount");
 
+const filterArea = document.getElementById("filterArea");
+const filterToggleBtn = document.getElementById("filterToggleBtn");
+
 let currentUser = null;
 let ready = false;
 let employees = [];
 let editingId = null;
+
+
+// MOBILE FILTER DEFAULT HIDE
+if(window.matchMedia("(max-width:650px)").matches){
+
+  filterArea.classList.add("is-hidden");
+
+  filterToggleBtn.textContent = "☰ ফিল্টার দেখান";
+  filterToggleBtn.setAttribute("aria-expanded","false");
+
+}
+
+
+// FILTER SHOW / HIDE
+filterToggleBtn.addEventListener("click",()=>{
+
+  const isHidden = filterArea.classList.toggle("is-hidden");
+
+  if(isHidden){
+
+    filterToggleBtn.textContent = "☰ ফিল্টার দেখান";
+    filterToggleBtn.setAttribute("aria-expanded","false");
+
+  }else{
+
+    filterToggleBtn.textContent = "✕ ফিল্টার লুকান";
+    filterToggleBtn.setAttribute("aria-expanded","true");
+
+  }
+
+});
 
 
 function showMessage(text,color="green"){
@@ -498,9 +630,11 @@ function closeForm(){
 
 
 document.getElementById("openFormBtn").addEventListener("click",()=>{
+
   editingId = null;
   form.reset();
   openForm();
+
 });
 
 
@@ -508,7 +642,6 @@ document.getElementById("cancelFormBtn").addEventListener("click",closeForm);
 
 
 // ADMIN LOGIN CHECK
-
 onAuthStateChanged(auth,async(user)=>{
 
   if(!user){
@@ -550,7 +683,6 @@ onAuthStateChanged(auth,async(user)=>{
 
 
 // LOAD EMPLOYEES
-
 async function loadEmployees(){
 
   const snapshot = await getDocs(
@@ -570,7 +702,6 @@ async function loadEmployees(){
 
 
 // RENDER + FILTER
-
 function renderEmployees(){
 
   const nameValue = filterName.value.trim().toLowerCase();
@@ -623,7 +754,6 @@ function renderEmployees(){
 
     });
 
-
     const action = document.createElement("td");
 
     const editBtn = document.createElement("button");
@@ -632,13 +762,11 @@ function renderEmployees(){
 
     editBtn.onclick = ()=>editEmployee(emp);
 
-
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Delete";
     deleteBtn.className = "delete";
 
     deleteBtn.onclick = ()=>removeEmployee(emp.documentId);
-
 
     action.append(editBtn,deleteBtn);
     tr.appendChild(action);
@@ -654,14 +782,12 @@ function renderEmployees(){
 
 
 // FILTER EVENTS
-
 filterName.addEventListener("input",renderEmployees);
 filterLine.addEventListener("change",renderEmployees);
 filterPost.addEventListener("change",renderEmployees);
 
 
-// ADD EMPLOYEE
-
+// ADD / UPDATE EMPLOYEE
 form.addEventListener("submit",async(e)=>{
 
   e.preventDefault();
@@ -678,7 +804,6 @@ form.addEventListener("submit",async(e)=>{
 
   };
 
-
   if(!employee.id || !employee.name){
     showMessage("নাম এবং Employee ID দিতে হবে।","red");
     return;
@@ -686,7 +811,6 @@ form.addEventListener("submit",async(e)=>{
 
   saveBtn.disabled = true;
   saveBtn.textContent = "Saving...";
-
 
   try{
 
@@ -701,7 +825,6 @@ form.addEventListener("submit",async(e)=>{
 
     }else{
 
-      // Prevent duplicate employee ID
       const duplicate = employees.some(emp=>
         String(emp.id).trim()===employee.id
       );
@@ -736,7 +859,7 @@ form.addEventListener("submit",async(e)=>{
   }finally{
 
     saveBtn.disabled = false;
-    saveBtn.textContent = "Save Employee";
+    saveBtn.textContent = editingId ? "Update Employee" : "Save Employee";
 
   }
 
@@ -744,7 +867,6 @@ form.addEventListener("submit",async(e)=>{
 
 
 // EDIT EMPLOYEE
-
 function editEmployee(emp){
 
   editingId = emp.documentId;
@@ -763,7 +885,6 @@ function editEmployee(emp){
 
 
 // DELETE EMPLOYEE
-
 async function removeEmployee(documentId){
 
   if(!confirm("আপনি কি এই কর্মচারীর তথ্য মুছে ফেলতে চান?")){
@@ -792,7 +913,6 @@ async function removeEmployee(documentId){
 
 
 // LOGOUT
-
 document.getElementById("logoutBtn").addEventListener("click",async()=>{
 
   await signOut(auth);
