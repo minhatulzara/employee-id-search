@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Data Import</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:22px;font-family:Arial,sans-serif;background:#f2f5fa;color:#243047}.wrap{max-width:760px;margin:auto}.card{background:#fff;border-radius:14px;padding:22px;margin:0 0 18px;box-shadow:0 5px 22px #172b4d12}h1{font-size:23px;margin:0 0 8px;color:#173b70}p{line-height:1.6;color:#596579}.note{background:#fff8e6;border-left:4px solid #e6a700;padding:12px;border-radius:6px;color:#664d00}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:#eef4ff;border-radius:9px;padding:13px}.stat strong{display:block;font-size:24px;color:#1758b8}.stat span{font-size:12px;color:#596579}input[type=file]{width:100%;padding:13px;border:1px dashed #9baac0;border-radius:8px;background:#f9fbff}button{border:0;border-radius:8px;padding:13px 18px;font-weight:bold;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}.primary{background:#1764c0;color:white;width:100%;margin-top:12px}.secondary{background:#e7eef9;color:#173b70}.danger{color:#b42318}.good{color:#087443}.muted{color:#667085;font-size:13px}#status{white-space:pre-wrap;line-height:1.6;margin-top:14px}ul{line-height:1.8}.hidden{display:none}@media(max-width:520px){body{padding:12px}.stats{grid-template-columns:1fr 1fr}.card{padding:17px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="card">
+    <h1>Employee Data Import</h1>
+    <p>পুরোনো Employee ID Search HTML ফাইল থেকে কর্মচারীদের তথ্য Firestore-এ Import করুন।</p>
+    <div class="note"><b>গুরুত্বপূর্ণ:</b> এই পেজে পুরোনো HTML ফাইলটি আপনার কম্পিউটার থেকে নির্বাচন করতে হবে। কর্মচারীদের ডেটা এই import.html ফাইলে রাখা নেই; তাই GitHub-এর Public Repository-তে ফোন নম্বর প্রকাশ হবে না।</div>
+  </section>
+  <section class="card">
+    <h3>১. পুরোনো HTML ফাইল নির্বাচন</h3>
+    <input type="file" id="sourceFile" accept=".html,.htm,.txt,text/html,text/plain">
+    <p class="muted">যে ফাইলে আগের <b>const users = [...]</b> তালিকা আছে, সেটি নির্বাচন করুন।</p>
+    <button class="secondary" id="previewBtn" type="button">তথ্য যাচাই করুন</button>
+    <div id="preview" class="hidden">
+      <hr style="border:0;border-top:1px solid #e5eaf1;margin:18px 0">
+      <div class="stats">
+        <div class="stat"><strong id="validCount">0</strong><span>সঠিক রেকর্ড</span></div>
+        <div class="stat"><strong id="blankCount">0</strong><span>খালি/অসম্পূর্ণ</span></div>
+        <div class="stat"><strong id="duplicateCount">0</strong><span>ডুপ্লিকেট ID গ্রুপ</span></div>
+      </div>
+      <div id="duplicateList"></div>
+      <p class="muted">ডুপ্লিকেট ID-র সব রেকর্ড Import থেকে বাদ যাবে। আগে থেকেই Firestore-এ থাকা ID-ও পরিবর্তন করা হবে না।</p>
+      <label style="display:flex;gap:9px;align-items:flex-start;margin-top:14px"><input type="checkbox" id="confirmCheck" style="width:auto;margin-top:3px"> <span>আমি ডেটা যাচাই করেছি এবং Import শুরু করতে সম্মত।</span></label>
+      <button class="primary" id="importBtn" type="button" disabled>Firebase-এ Import শুরু করুন</button>
+    </div>
+    <div id="status" aria-live="polite"></div>
+  </section>
+  <section class="card">
+    <h3>২. Import-এর নিয়ম</h3>
+    <ul>
+      <li>Employee ID ও Name না থাকলে রেকর্ড বাদ যাবে।</li>
+      <li>Employee ID এবং Phone নম্বর Text হিসেবেই সংরক্ষিত হবে; শুরুর ০ থাকবে।</li>
+      <li>একই ID একাধিকবার থাকলে সবগুলো বাদ যাবে, যাতে ভুল ব্যক্তির তথ্য মিশে না যায়।</li>
+      <li>আগে থেকে থাকা Employee ID overwrite হবে না।</li>
+      <li>Import সম্পন্ন হলে Dashboard-এ কর্মচারীর তালিকা দেখা যাবে।</li>
+    </ul>
+  </section>
+</div>
+<script type="module">
+import { auth, db } from './firebase.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { collection, getDocs, doc, writeBatch, getDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+const $ = id => document.getElementById(id);
+let authorized = false;
+let parsedRows = [];
+let uniqueRows = [];
+let duplicateIds = [];
+
+function say(message, cls='') { $('status').className=cls; $('status').textContent=message; }
+
+onAuthStateChanged(auth, async user => {
+  if (!user) { location.href='./admin.html'; return; }
+  try {
+    const adminSnap = await getDoc(doc(db,'admins',user.uid));
+    const role = adminSnap.exists() ? adminSnap.data().role : '';
+    if (!['superadmin','admin'].includes(role)) {
+      await signOut(auth);
+      location.href='./admin.html';
+      return;
+    }
+    authorized = true;
+    say('Admin যাচাই সম্পন্ন। এখন পুরোনো HTML ফাইল নির্বাচন করুন।','good');
+  } catch (e) {
+    console.error(e);
+    say('Admin অনুমতি যাচাই করা যায়নি: '+e.message,'danger');
+  }
+});
+
+function parseUsers(source) {
+  const start = source.indexOf('const users');
+  if (start < 0) throw new Error('ফাইলে const users তালিকা পাওয়া যায়নি। সঠিক পুরোনো HTML ফাইল নির্বাচন করুন।');
+  const arrayStart = source.indexOf('[', start);
+  const arrayEnd = source.indexOf('];', arrayStart);
+  if (arrayStart < 0 || arrayEnd < 0) throw new Error('users তালিকার শুরু বা শেষ পাওয়া যায়নি।');
+  const block = source.slice(arrayStart + 1, arrayEnd);
+  const pattern = /\{\s*id:\s*"([^"]*)",\s*line:\s*"([^"]*)",\s*(?:Post:\s*"([^"]*)",\s*)?name:\s*"([^"]*)",\s*phone:\s*"([^"]*)"\s*\}/g;
+  const rows=[]; let match;
+  while ((match=pattern.exec(block)) !== null) {
+    rows.push({id:match[1].trim(),line:match[2].trim(),post:(match[3]||'').trim(),name:match[4].trim(),phone:match[5].trim()});
+  }
+  if (!rows.length) throw new Error('কোনো কর্মচারীর রেকর্ড পড়া যায়নি। পুরোনো ফাইলের ফরম্যাট আলাদা হতে পারে।');
+  return rows;
+}
+
+$('previewBtn').addEventListener('click', async () => {
+  try {
+    if (!authorized) throw new Error('Admin যাচাই শেষ হয়নি। একটু অপেক্ষা করে আবার চেষ্টা করুন।');
+    const file=$('sourceFile').files[0];
+    if (!file) throw new Error('আগে পুরোনো HTML ফাইল নির্বাচন করুন।');
+    const source=await file.text();
+    parsedRows=parseUsers(source);
+    const complete=parsedRows.filter(r=>r.id && r.name);
+    const counts=new Map();
+    complete.forEach(r=>counts.set(r.id,(counts.get(r.id)||0)+1));
+    duplicateIds=[...counts.entries()].filter(([,n])=>n>1).map(([id])=>id).sort();
+    const dupSet=new Set(duplicateIds);
+    uniqueRows=complete.filter(r=>!dupSet.has(r.id));
+    const blank=parsedRows.length-complete.length;
+    $('validCount').textContent=uniqueRows.length;
+    $('blankCount').textContent=blank;
+    $('duplicateCount').textContent=duplicateIds.length;
+    $('duplicateList').innerHTML=duplicateIds.length
+      ? '<p class="danger"><b>যাচাই প্রয়োজন—এই ID-গুলো বাদ থাকবে:</b> '+duplicateIds.join(', ')+'</p>'
+      : '<p class="good">কোনো ডুপ্লিকেট ID পাওয়া যায়নি।</p>';
+    $('preview').classList.remove('hidden');
+    $('confirmCheck').checked=false;
+    $('importBtn').disabled=true;
+    say('ফাইল যাচাই হয়েছে। '+parsedRows.length+'টি object পাওয়া গেছে; '+uniqueRows.length+'টি Import-এর জন্য প্রস্তুত।');
+  } catch(e) { console.error(e); say(e.message,'danger'); }
+});
+
+$('confirmCheck').addEventListener('change', e => { $('importBtn').disabled=!e.target.checked || !authorized || !uniqueRows.length; });
+
+$('importBtn').addEventListener('click', async () => {
+  if (!authorized || !$('confirmCheck').checked || !uniqueRows.length) return;
+  const btn=$('importBtn'); btn.disabled=true; btn.textContent='Import হচ্ছে...';
+  try {
+    const snap=await getDocs(collection(db,'employees'));
+    const existingIds=new Set(snap.docs.map(d=>String(d.data().id ?? d.id)));
+    const fresh=uniqueRows.filter(r=>!existingIds.has(r.id));
+    const skipped=uniqueRows.length-fresh.length;
+    let imported=0;
+    for (let i=0;i<fresh.length;i+=400) {
+      const batch=writeBatch(db);
+      fresh.slice(i,i+400).forEach(emp=>{
+        batch.set(doc(db,'employees',emp.id),emp);
+      });
+      await batch.commit();
+      imported += Math.min(400,fresh.length-i);
+      say('Import চলছে: '+imported+' / '+fresh.length+'টি রেকর্ড সংরক্ষিত...');
+    }
+    say('Import সম্পন্ন!\nনতুন যোগ হয়েছে: '+imported+'\nআগে থেকেই ছিল, তাই বাদ: '+skipped+'\nডুপ্লিকেট ID গ্রুপ বাদ: '+duplicateIds.length+'\nখালি/অসম্পূর্ণ রেকর্ড বাদ: '+(parsedRows.length-parsedRows.filter(r=>r.id&&r.name).length),'good');
+    btn.textContent='Import সম্পন্ন';
+  } catch(e) {
+    console.error(e);
+    say('Import সম্পূর্ণ হয়নি: '+e.message+'\nআবার চেষ্টা করার আগে Dashboard/Firestore-এ যোগ হওয়া রেকর্ড যাচাই করুন। পুনরায় চালালে আগে থেকে থাকা ID overwrite হবে না।','danger');
+    btn.disabled=false; btn.textContent='আবার চেষ্টা করুন';
+  }
+});
+</script>
+</body>
+</html>
