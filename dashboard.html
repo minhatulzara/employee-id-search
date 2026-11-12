@@ -7,112 +7,424 @@
 
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f3f6fb;color:#243047}
-header{background:#173b70;color:white;padding:18px 5%;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-header h2{margin:0;font-size:21px}
-button{border:0;border-radius:7px;padding:10px 15px;cursor:pointer;font-weight:bold}
-.logout{background:#fff;color:#173b70}
-.container{max-width:1100px;margin:25px auto;padding:0 15px}
-.card{background:white;padding:22px;border-radius:12px;margin-bottom:22px;box-shadow:0 3px 15px #0000000b}
-h3{margin-top:0;color:#173b70}
-.stats{background:#e9f1ff;padding:18px;border-radius:10px;margin-bottom:22px}
-.stats strong{font-size:27px;color:#1758b8}
-.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}
-label{display:block;font-size:14px;font-weight:bold;margin-bottom:7px}
-input{width:100%;padding:12px;border:1px solid #d5dce8;border-radius:7px;font-size:15px}
-.primary{background:#1764c0;color:white;margin-top:16px}
-.primary:disabled{opacity:.6}
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:700px}
-th,td{text-align:left;padding:12px;border-bottom:1px solid #e8edf4;font-size:14px}
-th{background:#f2f6fc}
-.edit{background:#e6efff;color:#1457a8;margin-right:5px}
-.delete{background:#ffe8e8;color:#bd2525}
-#message{margin-top:12px;font-size:14px}
-@media(max-width:600px){.form-grid{grid-template-columns:1fr}header h2{font-size:17px}}
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f3f6fb;
+  color:#243047;
+}
+
+header{
+  background:#173b70;
+  color:white;
+  padding:18px 5%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  box-shadow:0 3px 12px #00000015;
+}
+
+header h2{
+  margin:0;
+  font-size:21px;
+}
+
+button{
+  border:0;
+  border-radius:8px;
+  padding:11px 16px;
+  cursor:pointer;
+  font-weight:bold;
+  transition:.2s;
+}
+
+button:hover{opacity:.88}
+
+.logout{
+  background:white;
+  color:#173b70;
+}
+
+.container{
+  max-width:1200px;
+  margin:28px auto;
+  padding:0 16px;
+}
+
+.card{
+  background:white;
+  padding:22px;
+  border-radius:13px;
+  margin-bottom:22px;
+  box-shadow:0 3px 15px #0000000b;
+}
+
+.top-stats{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  flex-wrap:wrap;
+}
+
+.stats-info{
+  background:#eaf2ff;
+  padding:16px 22px;
+  border-radius:10px;
+  min-width:180px;
+}
+
+.stats-info span{
+  display:block;
+  color:#526783;
+  font-size:14px;
+  margin-bottom:5px;
+}
+
+.stats-info strong{
+  font-size:30px;
+  color:#1758b8;
+}
+
+.add-btn{
+  background:#1764c0;
+  color:white;
+  padding:14px 22px;
+  font-size:15px;
+}
+
+h3{
+  margin-top:0;
+  color:#173b70;
+}
+
+.form-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:17px;
+}
+
+label{
+  display:block;
+  font-size:14px;
+  font-weight:bold;
+  margin-bottom:8px;
+}
+
+input,select{
+  width:100%;
+  padding:12px;
+  border:1px solid #d5dce8;
+  border-radius:8px;
+  font-size:15px;
+  background:white;
+  outline:none;
+}
+
+input:focus,select:focus{
+  border-color:#1764c0;
+  box-shadow:0 0 0 3px #1764c01a;
+}
+
+.primary{
+  background:#1764c0;
+  color:white;
+  margin-top:18px;
+  min-width:140px;
+}
+
+.cancel-btn{
+  background:#e9edf4;
+  color:#34445e;
+  margin-top:18px;
+}
+
+.form-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+#employeeFormSection{
+  display:none;
+}
+
+.filter-grid{
+  display:grid;
+  grid-template-columns:1.5fr 1fr 1fr;
+  gap:13px;
+  margin-bottom:20px;
+}
+
+.filter-grid input,
+.filter-grid select{
+  background:#f8faff;
+}
+
+.table-wrap{
+  overflow-x:auto;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:800px;
+}
+
+th,td{
+  text-align:left;
+  padding:14px 12px;
+  border-bottom:1px solid #e8edf4;
+  font-size:14px;
+}
+
+th{
+  background:#f2f6fc;
+  color:#334b6c;
+  white-space:nowrap;
+}
+
+tbody tr:hover{
+  background:#f8faff;
+}
+
+.edit{
+  background:#e6efff;
+  color:#1457a8;
+  margin-right:5px;
+}
+
+.delete{
+  background:#ffe8e8;
+  color:#bd2525;
+}
+
+#message{
+  margin-top:12px;
+  font-size:14px;
+}
+
+.empty{
+  text-align:center;
+  color:#7b8799;
+  padding:25px;
+}
+
+.modal-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+@media(max-width:650px){
+  header h2{font-size:17px}
+  .form-grid{grid-template-columns:1fr}
+  .filter-grid{grid-template-columns:1fr}
+  .card{padding:17px}
+  .top-stats{align-items:stretch}
+  .stats-info{width:100%}
+  .add-btn{width:100%}
+}
 </style>
 </head>
 
 <body>
 
 <header>
-  <h2>Employee Management</h2>
+  <h2>EMPLOYEE MANAGEMENT</h2>
   <button class="logout" id="logoutBtn">Logout</button>
 </header>
 
 <div class="container">
 
-  <div class="stats">
-    <div>মোট কর্মচারী</div>
-    <strong id="totalEmployees">লোড হচ্ছে...</strong>
-  </div>
-
+  <!-- TOTAL EMPLOYEES -->
   <section class="card">
-    <h3>নতুন কর্মচারী যোগ করুন</h3>
+    <div class="top-stats">
+
+      <div class="stats-info">
+        <span>মোট কর্মচারী</span>
+        <strong id="totalEmployees">লোড হচ্ছে...</strong>
+      </div>
+
+      <button class="add-btn" id="openFormBtn">
+        + কর্মচারী যোগ করুন
+      </button>
+
+    </div>
+  </section>
+
+
+  <!-- ADD EMPLOYEE FORM -->
+  <section class="card" id="employeeFormSection">
+
+    <div class="modal-title">
+      <h3 id="formTitle">নতুন কর্মচারী যোগ করুন</h3>
+    </div>
 
     <form id="employeeForm">
+
       <div class="form-grid">
 
         <div>
-          <label>Employee ID</label>
-          <input id="empId" required placeholder="কর্মচারীর ID">
+          <label>Name / কর্মচারীর নাম</label>
+          <input id="name" required placeholder="কর্মচারীর নাম লিখুন">
         </div>
 
         <div>
-          <label>Line</label>
-          <input id="line" placeholder="Line">
+          <label>Employee ID / আইডি নাম্বার</label>
+          <input id="empId" required placeholder="আইডি নাম্বার লিখুন">
         </div>
 
         <div>
-          <label>Post</label>
-          <input id="post" placeholder="Post">
+          <label>Line / লাইন</label>
+          <select id="line" required>
+            <option value="">লাইন নির্বাচন করুন</option>
+            <option>O</option>
+            <option>P</option>
+            <option>Q</option>
+            <option>R</option>
+            <option>S</option>
+            <option>T</option>
+            <option>U</option>
+            <option>V</option>
+            <option>W</option>
+            <option>X</option>
+            <option>Y</option>
+            <option>Z</option>
+            <option>Z1</option>
+            <option>Z2</option>
+            <option>SEWING</option>
+          </select>
         </div>
 
         <div>
-          <label>Name</label>
-          <input id="name" required placeholder="কর্মচারীর নাম">
+          <label>Post / পদবি</label>
+          <select id="post" required>
+            <option value="">পদবি নির্বাচন করুন</option>
+            <option>হেলপার</option>
+            <option>অপারেটর</option>
+            <option>রিসিভম্যান</option>
+            <option>লাইন আয়রন ম্যান</option>
+            <option>সিজারম্যান</option>
+            <option>মার্কার</option>
+            <option>ইনপুটম্যান</option>
+            <option>সুপারভাইজার</option>
+            <option>লাইনচিফ</option>
+          </select>
         </div>
 
         <div>
-          <label>Phone Number</label>
-          <input id="phone" type="tel" placeholder="ফোন নম্বর">
+          <label>Mobile Number / মোবাইল নাম্বার</label>
+          <input id="phone" type="tel" placeholder="মোবাইল নাম্বার লিখুন">
         </div>
 
       </div>
 
-      <button class="primary" id="saveBtn" type="submit">
-        Add Employee
-      </button>
+      <div class="form-actions">
+        <button class="primary" id="saveBtn" type="submit">
+          Save Employee
+        </button>
+
+        <button class="cancel-btn" type="button" id="cancelFormBtn">
+          Cancel
+        </button>
+      </div>
 
       <p id="message"></p>
+
     </form>
   </section>
 
+
+  <!-- EMPLOYEE LIST -->
   <section class="card">
+
     <h3>সকল কর্মচারীর তালিকা</h3>
+
+    <!-- FILTER -->
+    <div class="filter-grid">
+
+      <div>
+        <label>নাম দিয়ে খুঁজুন</label>
+        <input id="filterName" placeholder="কর্মচারীর নাম লিখুন">
+      </div>
+
+      <div>
+        <label>লাইন দিয়ে ফিল্টার</label>
+        <select id="filterLine">
+          <option value="">সকল লাইন</option>
+          <option>O</option>
+          <option>P</option>
+          <option>Q</option>
+          <option>R</option>
+          <option>S</option>
+          <option>T</option>
+          <option>U</option>
+          <option>V</option>
+          <option>W</option>
+          <option>X</option>
+          <option>Y</option>
+          <option>Z</option>
+          <option>Z1</option>
+          <option>Z2</option>
+          <option>SEWING</option>
+        </select>
+      </div>
+
+      <div>
+        <label>পদবি দিয়ে ফিল্টার</label>
+        <select id="filterPost">
+          <option value="">সকল পদবি</option>
+          <option>হেলপার</option>
+          <option>অপারেটর</option>
+          <option>রিসিভম্যান</option>
+          <option>লাইন আয়রন ম্যান</option>
+          <option>সিজারম্যান</option>
+          <option>মার্কার</option>
+          <option>ইনপুটম্যান</option>
+          <option>সুপারভাইজার</option>
+          <option>লাইনচিফ</option>
+        </select>
+      </div>
+
+    </div>
 
     <div class="table-wrap">
       <table>
+
         <thead>
           <tr>
-            <th>ID</th>
+            <th>Name</th>
+            <th>Employee ID</th>
             <th>Line</th>
             <th>Post</th>
-            <th>Name</th>
-            <th>Phone</th>
+            <th>Mobile Number</th>
             <th>Action</th>
           </tr>
         </thead>
+
         <tbody id="employeeList">
-          <tr><td colspan="6">তথ্য লোড হচ্ছে...</td></tr>
+          <tr>
+            <td colspan="6" class="empty">তথ্য লোড হচ্ছে...</td>
+          </tr>
         </tbody>
+
       </table>
     </div>
+
+    <p id="listCount"></p>
+
   </section>
 
 </div>
 
+
 <script type="module">
+
 import { auth, db } from "./firebase.js";
 
 import {
@@ -130,191 +442,364 @@ import {
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
+
 const form = document.getElementById("employeeForm");
+const formSection = document.getElementById("employeeFormSection");
 const list = document.getElementById("employeeList");
 const message = document.getElementById("message");
 const total = document.getElementById("totalEmployees");
 const saveBtn = document.getElementById("saveBtn");
 
+const filterName = document.getElementById("filterName");
+const filterLine = document.getElementById("filterLine");
+const filterPost = document.getElementById("filterPost");
+const listCount = document.getElementById("listCount");
+
 let currentUser = null;
 let ready = false;
+let employees = [];
+let editingId = null;
 
-function showMessage(text, color = "green") {
+
+function showMessage(text,color="green"){
   message.style.color = color;
   message.textContent = text;
 }
 
-onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    window.location.href = "./admin.html";
+
+function openForm(){
+
+  formSection.style.display = "block";
+
+  document.getElementById("formTitle").textContent =
+    editingId ? "কর্মচারীর তথ্য পরিবর্তন করুন" : "নতুন কর্মচারী যোগ করুন";
+
+  formSection.scrollIntoView({
+    behavior:"smooth",
+    block:"start"
+  });
+
+}
+
+
+function closeForm(){
+
+  formSection.style.display = "none";
+  form.reset();
+  editingId = null;
+
+  document.getElementById("formTitle").textContent =
+    "নতুন কর্মচারী যোগ করুন";
+
+  saveBtn.textContent = "Save Employee";
+  showMessage("");
+
+}
+
+
+document.getElementById("openFormBtn").addEventListener("click",()=>{
+  editingId = null;
+  form.reset();
+  openForm();
+});
+
+
+document.getElementById("cancelFormBtn").addEventListener("click",closeForm);
+
+
+// ADMIN LOGIN CHECK
+
+onAuthStateChanged(auth,async(user)=>{
+
+  if(!user){
+    window.location.href="./admin.html";
     return;
   }
 
-  try {
-    const adminDoc = await getDoc(doc(db, "admins", user.uid));
+  try{
 
-    if (!adminDoc.exists() ||
-        !["superadmin", "admin"].includes(adminDoc.data().role)) {
+    const adminDoc = await getDoc(
+      doc(db,"admins",user.uid)
+    );
+
+    if(
+      !adminDoc.exists() ||
+      !["superadmin","admin"].includes(adminDoc.data().role)
+    ){
+
       await signOut(auth);
-      window.location.href = "./admin.html";
+      window.location.href="./admin.html";
       return;
     }
 
     currentUser = user;
     ready = true;
+
     await loadEmployees();
 
-  } catch (error) {
+  }catch(error){
+
     console.error(error);
+
     list.innerHTML =
-      '<tr><td colspan="6">অনুমতি যাচাই করা যায়নি। আবার চেষ্টা করো।</td></tr>';
+      '<tr><td colspan="6" class="empty">অনুমতি যাচাই করা যায়নি।</td></tr>';
+
   }
+
 });
 
-async function loadEmployees() {
-  const snapshot = await getDocs(collection(db, "employees"));
 
-  total.textContent = snapshot.size;
+// LOAD EMPLOYEES
+
+async function loadEmployees(){
+
+  const snapshot = await getDocs(
+    collection(db,"employees")
+  );
+
+  employees = snapshot.docs.map(item=>({
+    ...item.data(),
+    documentId:item.id
+  }));
+
+  total.textContent = employees.length;
+
+  renderEmployees();
+
+}
+
+
+// RENDER + FILTER
+
+function renderEmployees(){
+
+  const nameValue = filterName.value.trim().toLowerCase();
+  const lineValue = filterLine.value;
+  const postValue = filterPost.value;
+
+  const filtered = employees.filter(emp=>{
+
+    const name = String(emp.name || "").toLowerCase();
+    const line = String(emp.line || "");
+    const post = String(emp.post || emp.Post || "");
+
+    return (
+      name.includes(nameValue) &&
+      (!lineValue || line===lineValue) &&
+      (!postValue || post===postValue)
+    );
+
+  });
+
   list.innerHTML = "";
 
-  if (snapshot.empty) {
+  if(filtered.length===0){
+
     list.innerHTML =
-      '<tr><td colspan="6">এখনো কোনো কর্মচারী যোগ করা হয়নি।</td></tr>';
+      '<tr><td colspan="6" class="empty">কোনো কর্মচারী পাওয়া যায়নি।</td></tr>';
+
+    listCount.textContent = "কোনো কর্মচারী পাওয়া যায়নি।";
     return;
+
   }
 
-  snapshot.forEach((item) => {
-    const emp = item.data();
+  filtered.forEach(emp=>{
+
     const tr = document.createElement("tr");
 
     const values = [
-      emp.id, emp.line, emp.post, emp.name, emp.phone
+      emp.name,
+      emp.id,
+      emp.line,
+      emp.post || emp.Post,
+      emp.phone
     ];
 
-    values.forEach((value) => {
+    values.forEach(value=>{
+
       const td = document.createElement("td");
       td.textContent = value || "";
       tr.appendChild(td);
+
     });
+
 
     const action = document.createElement("td");
 
     const editBtn = document.createElement("button");
     editBtn.textContent = "Edit";
     editBtn.className = "edit";
-    editBtn.onclick = () => editEmployee(item.id, emp);
+
+    editBtn.onclick = ()=>editEmployee(emp);
+
 
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Delete";
     deleteBtn.className = "delete";
-    deleteBtn.onclick = () => removeEmployee(item.id);
 
-    action.append(editBtn, deleteBtn);
+    deleteBtn.onclick = ()=>removeEmployee(emp.documentId);
+
+
+    action.append(editBtn,deleteBtn);
     tr.appendChild(action);
+
     list.appendChild(tr);
+
   });
+
+  listCount.textContent =
+    "দেখানো হচ্ছে "+filtered.length+" জন / মোট "+employees.length+" জন কর্মচারী";
+
 }
 
-form.addEventListener("submit", async (e) => {
+
+// FILTER EVENTS
+
+filterName.addEventListener("input",renderEmployees);
+filterLine.addEventListener("change",renderEmployees);
+filterPost.addEventListener("change",renderEmployees);
+
+
+// ADD EMPLOYEE
+
+form.addEventListener("submit",async(e)=>{
+
   e.preventDefault();
 
-  if (!ready || !currentUser) return;
+  if(!ready || !currentUser) return;
 
   const employee = {
-    id: document.getElementById("empId").value.trim(),
-    line: document.getElementById("line").value.trim(),
-    post: document.getElementById("post").value.trim(),
-    name: document.getElementById("name").value.trim(),
-    phone: document.getElementById("phone").value.trim()
+
+    name:document.getElementById("name").value.trim(),
+    id:document.getElementById("empId").value.trim(),
+    line:document.getElementById("line").value,
+    post:document.getElementById("post").value,
+    phone:document.getElementById("phone").value.trim()
+
   };
 
-  if (!employee.id || !employee.name) {
-    showMessage("ID এবং Name অবশ্যই দিতে হবে।", "red");
+
+  if(!employee.id || !employee.name){
+    showMessage("নাম এবং Employee ID দিতে হবে।","red");
     return;
   }
 
   saveBtn.disabled = true;
   saveBtn.textContent = "Saving...";
 
-  try {
-    await addDoc(collection(db, "employees"), employee);
+
+  try{
+
+    if(editingId){
+
+      await updateDoc(
+        doc(db,"employees",editingId),
+        employee
+      );
+
+      showMessage("কর্মচারীর তথ্য সফলভাবে পরিবর্তন হয়েছে।");
+
+    }else{
+
+      // Prevent duplicate employee ID
+      const duplicate = employees.some(emp=>
+        String(emp.id).trim()===employee.id
+      );
+
+      if(duplicate){
+        showMessage("এই Employee ID আগে থেকেই আছে।","red");
+        return;
+      }
+
+      await addDoc(
+        collection(db,"employees"),
+        employee
+      );
+
+      showMessage("কর্মচারী সফলভাবে যোগ হয়েছে।");
+
+    }
+
     form.reset();
-    showMessage("কর্মচারী সফলভাবে যোগ হয়েছে।");
+    editingId = null;
+
     await loadEmployees();
 
-  } catch (error) {
-    console.error(error);
-    showMessage("তথ্য যোগ করা যায়নি। আবার চেষ্টা করো।", "red");
+    setTimeout(closeForm,900);
 
-  } finally {
+  }catch(error){
+
+    console.error(error);
+
+    showMessage("তথ্য সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।","red");
+
+  }finally{
+
     saveBtn.disabled = false;
-    saveBtn.textContent = "Add Employee";
+    saveBtn.textContent = "Save Employee";
+
   }
+
 });
 
-async function editEmployee(documentId, emp) {
-  if (!ready) return;
 
-  const id = prompt("Employee ID:", emp.id || "");
-  if (id === null) return;
+// EDIT EMPLOYEE
 
-  const name = prompt("Name:", emp.name || "");
-  if (name === null) return;
+function editEmployee(emp){
 
-  const line = prompt("Line:", emp.line || "");
-  if (line === null) return;
+  editingId = emp.documentId;
 
-  const post = prompt("Post:", emp.post || "");
-  if (post === null) return;
+  document.getElementById("name").value = emp.name || "";
+  document.getElementById("empId").value = emp.id || "";
+  document.getElementById("line").value = emp.line || "";
+  document.getElementById("post").value = emp.post || emp.Post || "";
+  document.getElementById("phone").value = emp.phone || "";
 
-  const phone = prompt("Phone:", emp.phone || "");
-  if (phone === null) return;
+  saveBtn.textContent = "Update Employee";
 
-  if (!id.trim() || !name.trim()) {
-    alert("ID এবং Name খালি রাখা যাবে না।");
+  openForm();
+
+}
+
+
+// DELETE EMPLOYEE
+
+async function removeEmployee(documentId){
+
+  if(!confirm("আপনি কি এই কর্মচারীর তথ্য মুছে ফেলতে চান?")){
     return;
   }
 
-  try {
-    await updateDoc(doc(db, "employees", documentId), {
-      id: id.trim(),
-      name: name.trim(),
-      line: line.trim(),
-      post: post.trim(),
-      phone: phone.trim()
-    });
+  try{
 
-    alert("কর্মচারীর তথ্য পরিবর্তন হয়েছে।");
+    await deleteDoc(
+      doc(db,"employees",documentId)
+    );
+
+    alert("কর্মচারীর তথ্য মুছে ফেলা হয়েছে।");
+
     await loadEmployees();
 
-  } catch (error) {
+  }catch(error){
+
     console.error(error);
-    alert("তথ্য পরিবর্তন করা যায়নি।");
+
+    alert("তথ্য মুছে ফেলা যায়নি।");
+
   }
+
 }
 
-async function removeEmployee(documentId) {
-  if (!ready) return;
 
-  if (!confirm("তুমি কি এই কর্মচারীর তথ্য বাতিল করতে চাও?")) {
-    return;
-  }
+// LOGOUT
 
-  try {
-    await deleteDoc(doc(db, "employees", documentId));
-    alert("কর্মচারীর তথ্য বাতিল হয়েছে।");
-    await loadEmployees();
+document.getElementById("logoutBtn").addEventListener("click",async()=>{
 
-  } catch (error) {
-    console.error(error);
-    alert("তথ্য বাতিল করা যায়নি।");
-  }
-}
-
-document.getElementById("logoutBtn").addEventListener("click", async () => {
   await signOut(auth);
-  window.location.href = "./admin.html";
+  window.location.href="./admin.html";
+
 });
+
 </script>
 
 </body>
