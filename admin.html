@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee System | Admin Login</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #eaf2ff, #f5f7fb);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.login-box {
+  background: white;
+  width: 100%;
+  max-width: 420px;
+  padding: 35px 30px;
+  border-radius: 18px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+}
+
+.logo {
+  width: 65px;
+  height: 65px;
+  background: #e8f0ff;
+  color: #2463eb;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  margin: 0 auto 18px;
+}
+
+h2 {
+  text-align: center;
+  color: #172b4d;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  text-align: center;
+  color: #7b8494;
+  font-size: 14px;
+  margin-bottom: 28px;
+}
+
+label {
+  display: block;
+  color: #344054;
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+input {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #d9dfeb;
+  border-radius: 9px;
+  outline: none;
+  font-size: 15px;
+  margin-bottom: 18px;
+}
+
+input:focus {
+  border-color: #2463eb;
+  box-shadow: 0 0 0 3px rgba(36,99,235,0.1);
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 9px;
+  background: #2463eb;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #174fc4;
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+#message {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.footer {
+  text-align: center;
+  color: #98a2b3;
+  font-size: 12px;
+  margin-top: 25px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="login-box">
+
+  <div class="logo">🔐</div>
+
+  <h2>Admin Login</h2>
+  <p class="subtitle">Employee ID Search & Management System</p>
+
+  <form id="loginForm">
+
+    <label>Email Address</label>
+    <input
+      type="email"
+      id="email"
+      placeholder="Enter your email"
+      required
+    >
+
+    <label>Password</label>
+    <input
+      type="password"
+      id="password"
+      placeholder="Enter your password"
+      required
+    >
+
+    <button type="submit" id="loginBtn">
+      Login to Dashboard
+    </button>
+
+  </form>
+
+  <p id="message"></p>
+
+  <div class="footer">
+    Secure Admin Access
+  </div>
+
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase.js";
+
+import {
+  signInWithEmailAndPassword,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+import {
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const form = document.getElementById("loginForm");
+const message = document.getElementById("message");
+const loginBtn = document.getElementById("loginBtn");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  loginBtn.disabled = true;
+  loginBtn.textContent = "Checking...";
+  message.style.color = "#2463eb";
+  message.textContent = "Login যাচাই করা হচ্ছে...";
+
+  try {
+    const result = await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    const user = result.user;
+
+    const adminRef = doc(db, "admins", user.uid);
+    const adminSnap = await getDoc(adminRef);
+
+    if (!adminSnap.exists()) {
+      await signOut(auth);
+      throw new Error("NO_ADMIN");
+    }
+
+    const role = adminSnap.data().role;
+
+    if (!["superadmin", "admin"].includes(role)) {
+      await signOut(auth);
+      throw new Error("NO_PERMISSION");
+    }
+
+    sessionStorage.setItem("adminRole", role);
+
+    message.style.color = "#138a52";
+    message.textContent = "Login সফল হয়েছে! Dashboard খুলছে...";
+
+    window.location.href = "./dashboard.html";
+
+  } catch (error) {
+
+    console.error(error);
+
+    message.style.color = "#dc2626";
+
+    if (error.code === "auth/invalid-credential") {
+      message.textContent = "Email অথবা Password ভুল হয়েছে।";
+    } else if (error.code === "auth/too-many-requests") {
+      message.textContent = "অনেকবার চেষ্টা হয়েছে। কিছুক্ষণ পর চেষ্টা করো।";
+    } else if (error.code === "auth/network-request-failed") {
+      message.textContent = "ইন্টারনেট সংযোগ পরীক্ষা করো।";
+    } else if (error.message === "NO_ADMIN") {
+      message.textContent = "এই অ্যাকাউন্টের Admin অনুমতি নেই।";
+    } else if (error.message === "NO_PERMISSION") {
+      message.textContent = "তোমার Admin অনুমতি সঠিক নয়।";
+    } else {
+      message.textContent = "Login করা যায়নি। আবার চেষ্টা করো।";
+    }
+
+  } finally {
+    loginBtn.disabled = false;
+    loginBtn.textContent = "Login to Dashboard";
+  }
+});
+</script>
+
+</body>
+</html>
